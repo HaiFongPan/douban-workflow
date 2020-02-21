@@ -1,27 +1,22 @@
 # douban-workflow
 
-因为网上找到的大多数豆瓣的 workflow 都因为豆瓣 api 的关闭而失效，所以，自己动手，丰衣足食。
+项目 fork 自 https://github.com/h3l/douban-workflow, 感谢 @h3l
 
-支持搜索书籍以及电影。
+做了一点小改动
+1. 用豆瓣网页版搜索（主要是想要一些演员信息和导演信息等）
+2. 添加了音乐搜索
 
-分别使用 `dbb` (douban book 简称)与 `dbm`(douban movie 简称)
+支持搜索书籍以及电影, 音乐。
 
-### 安装
+* `dbb` (douban book 简称)
+* `dbm`(douban movie 简称)
+* `dbu` (douban music)
 
-* [点击 douban.alfredworkflow 下载安装](https://github.com/h3l/douban-workflow/raw/master/douban.alfredworkflow)
 
 ### 实际效果如下
+![book](./assert/image-book.png)
 
-![image-20181121210316610](./assert/image-20181121210316610.png)
+![music](./assert/image-music.png)
 
-![image-20181121210659883](./assert/image-20181121210659883.png)
+![movie](./assert/image-movie.png)
 
-### 遗憾的地方
-
-可以使用书籍或者电影的缩略图代替 emoji 的图像，但是 alfred 的 workflow 默认不支持加载网络资源。so，just forget it。
-
-
-
-### 最后
-
-欢迎 pr。

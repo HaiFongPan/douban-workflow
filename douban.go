@@ -7,21 +7,19 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 	"gopkg.in/resty.v1"
+	"net/url"
 	"os"
 	"strings"
 )
 
 type UrlItem struct {
 	Url string
-	Cat string
 }
 
 type SearchResultItem struct {
-	Title         string
-	OriginScore   string
-	Url           string
-	FullStarCount int
-	HalfStarCount int
+	Title     string
+	Url       string
+	Subtitles string
 }
 
 type AlfredItem struct {
@@ -35,13 +33,14 @@ type AlfredItem struct {
 }
 
 var urlMapping = map[string]UrlItem{
-	"book": {
-		Url: "https://m.douban.com/search/?type=book&query=%s",
-		Cat: "1001",
-	},
 	"movie": {
-		Url: "https://m.douban.com/search/?type=movie&query=%s",
-		Cat: "1002",
+		Url: "https://www.douban.com/search?cat=1002&q=%s",
+	},
+	"music": {
+		Url: "https://www.douban.com/search?cat=1003&q=%s",
+	},
+	"book": {
+		Url: "https://www.douban.com/search?cat=1001&q=%s",
 	},
 }
 
@@ -58,42 +57,45 @@ func getItems(searchType string, searchString string) *[]SearchResultItem {
 	if v, ok := urlMapping[searchType]; ok {
 		resp, _ := resty.R().Get(fmt.Sprintf(v.Url, searchString))
 		doc, _ := goquery.NewDocumentFromReader(bytes.NewReader(resp.Body()))
-		s := doc.Find("ul.search_results_subjects > li")
-		var node *goquery.Document
-		var href, originScore, title string
-		var fullStar, halfStar int
-		r := make([]SearchResultItem, 0)
-		for _, n := range s.Nodes {
-			node = goquery.NewDocumentFromNode(n)
-			href = getNodeAttr(node.Find("a").Nodes[0], "href")
-			href = strings.ReplaceAll(href, "/"+searchType, "")
-
-			originScore = node.Find("a > div > p > span").Text()
-			title = node.Find("a > div > span").Text()
-			fullStar = len(node.Find(".rating-star-small-full").Nodes)
-			halfStar = len(node.Find(".rating-star-small-half").Nodes)
-			r = append(r, SearchResultItem{
-				Title:         title,
-				OriginScore:   originScore,
-				Url:           href,
-				FullStarCount: fullStar,
-				HalfStarCount: halfStar,
-			})
-		}
-		return &r
+		return getItemsFromDoc(doc)
 	}
 	return nil
 }
 
+func getItemsFromDoc(doc *goquery.Document) *[]SearchResultItem {
+	r := make([]SearchResultItem, 0)
+	s := doc.Find("div.search-result > div.result-list > div.result")
+
+	var href, title, score, desc string
+
+	for _, n := range s.Nodes {
+		node := goquery.NewDocumentFromNode(n)
+		titleNode := node.Find("div.content > div.title a")
+		href, _ = url.QueryUnescape(getNodeAttr(titleNode.Nodes[0], "href"))
+		start := strings.Index(href, "url=")
+		end := strings.Index(href, "\u0026")
+
+		title = titleNode.Text()
+		score = node.Find("span.rating_nums").Text()
+		desc = node.Find("span.subject-cast").Text()
+
+		r = append(r, SearchResultItem{
+			Title:     title,
+			Url:       href[start+4 : end],
+			Subtitles: "star: " + score + " " + desc,
+		})
+	}
+	return &r
+}
+
 func generateResponse(items *[]SearchResultItem, searchType string) {
-	baseUrl := fmt.Sprintf("https://%s.douban.com", searchType)
 	r := make([]AlfredItem, 0)
 	for _, i := range *items {
 		r = append(r, AlfredItem{
 			Type:     "file",
 			Title:    i.Title,
-			Subtitle: strings.Repeat("⭐", i.FullStarCount) + strings.Repeat("⚡", i.HalfStarCount) + i.OriginScore,
-			Arg:      fmt.Sprintf("%s%s", baseUrl, i.Url),
+			Subtitle: i.Subtitles,
+			Arg:      i.Url,
 			Icon: struct {
 				Path string `json:"path"`
 			}{
