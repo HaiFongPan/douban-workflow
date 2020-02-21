@@ -14,9 +14,9 @@
 
 
 ### 实际效果如下
-![book](./assert/image-book.png)
+![book](./assert/img-book.png)
 
-![music](./assert/image-music.png)
+![music](./assert/img-music.png)
 
-![movie](./assert/image-movie.png)
+![movie](./assert/img-movie.png)
 
